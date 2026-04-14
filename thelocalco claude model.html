@@ -767,6 +767,29 @@
       transform: translateY(-2px);
     }
 
+    .btn-submit:disabled {
+      opacity: 0.65;
+      cursor: wait;
+      transform: none;
+    }
+
+    .form-status {
+      min-height: 1.6rem;
+      margin-top: 1rem;
+      font-size: 0.92rem;
+      color: var(--muted);
+    }
+
+    .form-status.is-success { color: #b9e7c2; }
+    .form-status.is-error { color: #ffb4a0; }
+
+    .form-note {
+      margin-top: 0.8rem;
+      color: var(--muted);
+      font-size: 0.84rem;
+      line-height: 1.6;
+    }
+
     /* ── FOOTER ── */
     footer {
       background: var(--bg);
@@ -970,7 +993,13 @@
           <li>Monthly report</li>
           <li>Email support</li>
         </ul>
-        <a href="#contact" class="btn-pkg">Get started</a>
+        <a
+          href="https://buy.stripe.com/REPLACE_STARTER_LINK"
+          class="btn-pkg"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="Pay for the Starter package"
+        >Get started</a>
       </div>
       <div class="package-card featured">
         <div class="featured-badge">Most Popular</div>
@@ -984,7 +1013,13 @@
           <li>Content creation</li>
           <li>Bi-weekly calls</li>
         </ul>
-        <a href="#contact" class="btn-pkg">Get started</a>
+        <a
+          href="https://buy.stripe.com/REPLACE_GROWTH_LINK"
+          class="btn-pkg"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="Pay for the Growth package"
+        >Get started</a>
       </div>
       <div class="package-card">
         <div class="pkg-name">Scale</div>
@@ -997,7 +1032,13 @@
           <li>Creative design suite</li>
           <li>Priority 24/7 support</li>
         </ul>
-        <a href="#contact" class="btn-pkg">Get started</a>
+        <a
+          href="https://buy.stripe.com/REPLACE_SCALE_LINK"
+          class="btn-pkg"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="Pay for the Scale package"
+        >Get started</a>
       </div>
     </div>
   </section>
@@ -1067,7 +1108,11 @@
       </div>
     </div>
     <div class="contact-form-wrap">
-      <form>
+      <form
+        id="contact-form"
+        action="https://formspree.io/f/xjgjkpvy"
+        method="POST"
+      >
         <div class="form-group">
           <label for="name">Your Name</label>
           <input type="text" id="name" name="name" placeholder="e.g. Aryan Sharma" required />
@@ -1080,7 +1125,10 @@
           <label for="message">Your Message</label>
           <textarea id="message" name="message" placeholder="Tell us about your business and what you're looking to achieve..." required></textarea>
         </div>
+        <input type="hidden" name="source" value="The Local Co website contact form" />
         <button type="submit" class="btn-submit">Send Message</button>
+        <p id="form-status" class="form-status" aria-live="polite"></p>
+        
       </form>
     </div>
   </section>
@@ -1095,6 +1143,79 @@
       <a href="#">Twitter</a>
     </div>
   </footer>
+
+  <script>
+    const contactForm = document.getElementById('contact-form');
+    const formStatus = document.getElementById('form-status');
+    const submitButton = contactForm.querySelector('.btn-submit');
+    const defaultButtonText = submitButton.textContent;
+    const endpointPlaceholder = 'REPLACE_WITH_YOUR_FORM_ID';
+
+    function setFormStatus(message, type) {
+      formStatus.textContent = message;
+      formStatus.className = 'form-status';
+
+      if (type) {
+        formStatus.classList.add(type);
+      }
+    }
+
+    contactForm.addEventListener('submit', async function (event) {
+      const action = contactForm.getAttribute('action') || '';
+
+      if (action.includes(endpointPlaceholder)) {
+        event.preventDefault();
+        setFormStatus('Add your real Formspree form ID before this form can send messages.', 'is-error');
+        return;
+      }
+
+      if (window.location.protocol === 'file:') {
+        setFormStatus('The form will open a secure send request. For the best experience, publish this page on a web host first.', '');
+        return;
+      }
+
+      event.preventDefault();
+      submitButton.disabled = true;
+      submitButton.textContent = 'Sending...';
+      setFormStatus('Sending your message...', '');
+
+      try {
+        const response = await fetch(action, {
+          method: 'POST',
+          body: new FormData(contactForm),
+          headers: {
+            Accept: 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          contactForm.reset();
+          setFormStatus('Thanks. Your message has been sent successfully.', 'is-success');
+          return;
+        }
+
+        let errorMessage = 'There was a problem sending your message. Please try again.';
+
+        try {
+          const data = await response.json();
+
+          if (data && Array.isArray(data.errors) && data.errors.length > 0) {
+            errorMessage = data.errors.map(function (error) {
+              return error.message;
+            }).join(', ');
+          }
+        } catch (parseError) {
+        }
+
+        setFormStatus(errorMessage, 'is-error');
+      } catch (error) {
+        setFormStatus('Your browser could not reach the form service. Publish the page or try again in a moment.', 'is-error');
+      } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = defaultButtonText;
+      }
+    });
+  </script>
 
 </body>
 </html>
